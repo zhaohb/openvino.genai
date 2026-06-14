@@ -405,3 +405,16 @@ ov_status_e ov_genai_generation_config_validate(ov_genai_generation_config* conf
     }
     return ov_status_e::OK;
 }
+
+ov_status_e ov_genai_generation_config_set_adapters(ov_genai_generation_config* handle,
+                                                    const ov_genai_adapter_config* adapter_config) {
+    if (!handle || !(handle->object) || !adapter_config || !(adapter_config->object)) {
+        return ov_status_e::INVALID_C_PARAM;
+    }
+    try {
+        handle->object->adapters = *(adapter_config->object);
+    } catch (...) {
+        return ov_status_e::UNKNOW_EXCEPTION;
+    }
+    return ov_status_e::OK;
+}

@@ -6,6 +6,7 @@
 #include "openvino/genai/generation_config.hpp"
 #include "openvino/genai/llm_pipeline.hpp"
 #include "openvino/genai/chat_history.hpp"
+#include "openvino/genai/lora_adapter.hpp"
 #include "types_c.h"
 #include <stdarg.h>
 
@@ -97,6 +98,52 @@ ov_status_e ov_genai_llm_pipeline_create(const char* models_path, const char* de
                 property["MIN_RESPONSE_LEN"] = std::stoi(min_response_len);
             }
        }
+        std::unique_ptr<ov_genai_llm_pipeline> _pipe = std::make_unique<ov_genai_llm_pipeline>();
+        _pipe->object =
+            std::make_shared<ov::genai::LLMPipeline>(std::filesystem::path(models_path), std::string(device), property);
+        *pipe = _pipe.release();
+    } catch (...) {
+        return ov_status_e::UNKNOW_EXCEPTION;
+    }
+    return ov_status_e::OK;
+}
+
+ov_status_e ov_genai_llm_pipeline_create_with_adapters(const char* models_path,
+                                                       const char* device,
+                                                       const ov_genai_adapter_config* adapter_config,
+                                                       const size_t property_args_size,
+                                                       ov_genai_llm_pipeline** pipe,
+                                                       ...) {
+    if (!models_path || !device || !pipe || !adapter_config || !(adapter_config->object) ||
+        property_args_size % 2 != 0) {
+        return ov_status_e::INVALID_C_PARAM;
+    }
+    try {
+        ov::AnyMap property = {};
+        va_list args_ptr;
+        va_start(args_ptr, pipe);
+        size_t property_size = property_args_size / 2;
+        for (size_t i = 0; i < property_size; i++) {
+            GET_PROPERTY_FROM_ARGS_LIST;
+        }
+        va_end(args_ptr);
+        // Same NPU-only string→int coercion as ov_genai_llm_pipeline_create.
+        if (std::string(device) == "NPU") {
+            if (property.find("MAX_PROMPT_LEN") != property.end()) {
+                std::string max_prompt_len = property["MAX_PROMPT_LEN"].as<std::string>();
+                property.erase("MAX_PROMPT_LEN");
+                property["MAX_PROMPT_LEN"] = std::stoi(max_prompt_len);
+            }
+            if (property.find("MIN_RESPONSE_LEN") != property.end()) {
+                std::string min_response_len = property["MIN_RESPONSE_LEN"].as<std::string>();
+                property.erase("MIN_RESPONSE_LEN");
+                property["MIN_RESPONSE_LEN"] = std::stoi(min_response_len);
+            }
+        }
+        // Register the LoRA adapter(s) via the ov::genai::adapters property.
+        auto adapters_prop = ov::genai::adapters(*(adapter_config->object));
+        property[adapters_prop.first] = adapters_prop.second;
+
         std::unique_ptr<ov_genai_llm_pipeline> _pipe = std::make_unique<ov_genai_llm_pipeline>();
         _pipe->object =
             std::make_shared<ov::genai::LLMPipeline>(std::filesystem::path(models_path), std::string(device), property);

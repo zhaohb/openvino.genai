@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "openvino/c/ov_common.h"
+#include "openvino/genai/c/lora_adapter.h"
 #include "openvino/genai/c/visibility.h"
 
 /**
@@ -53,6 +54,22 @@ OPENVINO_GENAI_C_EXPORTS ov_status_e ov_genai_generation_config_create_from_json
  * @return ov_status_e A status code, return OK(0) if successful.
  */
 OPENVINO_GENAI_C_EXPORTS void ov_genai_generation_config_free(ov_genai_generation_config* handle);
+
+/**
+ * @brief Set the LoRA adapter(s) used for generation, enabling per-generate adapter switching.
+ *
+ * This sets ov::genai::GenerationConfig::adapters. For dynamic switching to work, the pipeline
+ * must have been created with a dynamic-capable mode (e.g. MODE_AUTO / MODE_DYNAMIC) and with the
+ * relevant adapters registered at load time. Passing a config built from MODE_FUSE is not
+ * compatible with per-generate switching.
+ *
+ * @param handle A pointer to the ov_genai_generation_config instance.
+ * @param adapter_config A pointer to the ov_genai_adapter_config carrying the LoRA adapter(s).
+ * @return ov_status_e A status code, return OK(0) if successful.
+ */
+OPENVINO_GENAI_C_EXPORTS ov_status_e
+ov_genai_generation_config_set_adapters(ov_genai_generation_config* handle,
+                                        const ov_genai_adapter_config* adapter_config);
 
 /**
  * @brief Set the maximum number of tokens to generate, excluding the number of tokens in the prompt. max_new_tokens

@@ -10,6 +10,7 @@
 #include "openvino/genai/visual_language/pipeline.hpp"
 #include "openvino/genai/chat_history.hpp"
 #include "openvino/genai/json_container.hpp"
+#include "openvino/genai/lora_adapter.hpp"
 
 #define GET_PROPERTY_FROM_ARGS_LIST                                                                            \
     std::string property_key = va_arg(args_ptr, char*);                                                        \
@@ -145,4 +146,20 @@ struct ov_genai_chat_history_opaque {
  */
 struct ov_genai_json_container_opaque {
     std::shared_ptr<ov::genai::JsonContainer> object;
+};
+
+/**
+ * @struct ov_genai_adapter_opaque
+ * @brief This is an interface of ov::genai::Adapter
+ */
+struct ov_genai_adapter_opaque {
+    std::shared_ptr<ov::genai::Adapter> object;
+};
+
+/**
+ * @struct ov_genai_adapter_config_opaque
+ * @brief This is an interface of ov::genai::AdapterConfig
+ */
+struct ov_genai_adapter_config_opaque {
+    std::shared_ptr<ov::genai::AdapterConfig> object;
 };

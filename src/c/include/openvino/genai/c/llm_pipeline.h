@@ -12,6 +12,7 @@
 #include "generation_config.h"
 #include "perf_metrics.h"
 #include "chat_history.h"
+#include "lora_adapter.h"
 
 /**
  * @struct ov_genai_decoded_results
@@ -99,6 +100,41 @@ OPENVINO_GENAI_C_EXPORTS ov_status_e ov_genai_llm_pipeline_create(const char* mo
                                                                   const size_t property_args_size,
                                                                   ov_genai_llm_pipeline** pipe,
                                                                   ...);
+
+/**
+ * @brief Initialize an ov_genai_llm_pipeline with LoRA adapters registered at load time.
+ *
+ * This is equivalent to ov_genai_llm_pipeline_create but additionally passes the
+ * ov::genai::adapters property built from @p adapter_config, so the given LoRA
+ * adapter(s) are applied to the model. Optional plugin properties can still be
+ * provided as <key, value> string pairs, exactly like ov_genai_llm_pipeline_create.
+ *
+ * @param models_path Path to the directory containing the model files.
+ * @param device Device to run the model on (e.g., "CPU", "GPU").
+ * @param adapter_config A pointer to the ov_genai_adapter_config carrying the LoRA adapter(s).
+ * @param property_args_size How many property args follow (each property is 2 args: key and value).
+ * @param pipe A pointer to the newly created ov_genai_llm_pipeline.
+ * @param ... Optional pack of pairs: <char* property_key, char* property_value>.
+ * @return ov_status_e A status code, return OK(0) if successful.
+ *
+ * @code
+ * // Apply a single LoRA adapter at alpha=0.8 on CPU:
+ * ov_genai_adapter* adapter = NULL;
+ * ov_genai_adapter_create("lora.safetensors", &adapter);
+ * ov_genai_adapter_config* cfg = NULL;
+ * ov_genai_adapter_config_create(OV_GENAI_ADAPTER_MODE_AUTO, &cfg);
+ * ov_genai_adapter_config_add(cfg, adapter, 0.8f);
+ * ov_genai_llm_pipeline* pipe = NULL;
+ * ov_genai_llm_pipeline_create_with_adapters(model_path, "CPU", cfg, 0, &pipe);
+ * @endcode
+ */
+OPENVINO_GENAI_C_EXPORTS ov_status_e
+ov_genai_llm_pipeline_create_with_adapters(const char* models_path,
+                                           const char* device,
+                                           const ov_genai_adapter_config* adapter_config,
+                                           const size_t property_args_size,
+                                           ov_genai_llm_pipeline** pipe,
+                                           ...);
 
 /**
  * @brief Release the memory allocated by ov_genai_llm_pipeline.
